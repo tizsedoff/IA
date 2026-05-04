@@ -1,51 +1,44 @@
 class RedNeuronalAPS {
     constructor() {
-        this.pesos = { 
-            "iphone": 0.8, "11": 0.5, "12": 0.5, "13": 0.5, 
-            "15": 0.5, "precio": 0.9, "costo": 0.9, "envio": 0.7 
+        // Conocimiento específico de tu negocio
+        this.datosPropios = {
+            "iphone": "En APS Shop tenemos los mejores iPhones de Misiones. ¿Buscás el 11, 12, 13 o 15?",
+            "precio": "Los precios de los equipos dependen del stock y el dólar. Consultanos al MD para cotizar.",
+            "envio": "Hacemos envíos a todo Misiones. Si estás en Oberá, coordinamos en el acto.",
+            "hola": "¡Hola! Soy la IA de APS. Preguntame lo que quieras, de iPhones o de cultura general.",
+            "chau": "¡Nos vemos! Gracias por contactar a APS Shop.",
+            "gracias": "¡De nada! Es un gusto ayudarte."
         };
     }
 
-    // Función para buscar en la web (usando Wikipedia como ejemplo de base de datos)
-    async buscarEnWeb(query) {
+    // FUNCIÓN DE PENSAMIENTO GLOBAL (Busca en la web)
+    async buscarConocimientoExterno(tema) {
         try {
-            const url = `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
-            const response = await fetch(url);
-            const data = await response.json();
-            
-            if (data.extract) {
-                return data.extract;
-            } else {
-                return null;
-            }
-        } catch (error) {
+            // Consultamos la base de datos de Wikipedia para responder "cualquier cosa"
+            const respuesta = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(tema)}`);
+            const data = await respuesta.json();
+            return data.extract || null;
+        } catch (e) {
             return null;
         }
     }
 
-    async obtenerRespuesta(pregunta) {
-        const p = pregunta.toLowerCase().trim();
-        const palabras = p.split(" ");
+    async procesarPregunta(mensaje) {
+        const m = mensaje.toLowerCase().trim();
         
-        // 1. Lógica interna de APS Shop (Prioridad)
-        let puntaje = 0;
-        palabras.forEach(palabra => {
-            if (this.pesos[palabra]) puntaje += this.pesos[palabra];
-        });
-
-        if (puntaje > 0.4) {
-            if (p.includes("15")) return "El iPhone 15 tiene USB-C y es lo más nuevo en APS Shop.";
-            if (p.includes("precio")) return "Los precios de iPhones varían diariamente. Consultanos al MD.";
-            return "Veo que preguntás por iPhones. ¿Querés ver el catálogo de APS?";
+        // 1. Check de comandos directos o palabras de APS
+        for (let clave in this.datosPropios) {
+            if (m.includes(clave)) return this.datosPropios[clave];
         }
 
-        // 2. BUSCADOR INTELIGENTE (Si no es de APS, busca en la web)
-        const infoWeb = await this.buscarEnWeb(pregunta);
-        if (infoWeb) {
-            return `Según mis registros web: ${infoWeb}`;
+        // 2. Si no es algo de la tienda, la IA "PIENSA" y busca afuera
+        const infoExtra = await this.buscarConocimientoExterno(m);
+        if (infoExtra) {
+            return infoExtra;
         }
 
-        return "No encontré info específica en APS ni en la web rápida. ¿Podés ser más específico?";
+        // 3. Respuesta por defecto si está muy confundida
+        return "No tengo info exacta sobre eso, pero si es un objeto o tema famoso, probá escribiendo solo el nombre (ej: 'Toyota Hilux').";
     }
 }
 
@@ -58,31 +51,30 @@ async function ejecutarIA() {
 
     if (texto === "") return;
 
-    // Mensaje Usuario
+    // Crear globo del usuario
     const divUser = document.createElement('div');
     divUser.className = 'mensaje-usuario';
     divUser.innerText = texto;
     container.appendChild(divUser);
 
-    input.value = ""; 
+    input.value = "";
 
-    // Pensando...
+    // Globo de "Pensando..."
     const divPensando = document.createElement('div');
     divPensando.className = 'mensaje-ia';
-    divPensando.id = 'pensando';
-    divPensando.innerText = "> Consultando base de datos mundial...";
+    divPensando.id = 'temp-pensando';
+    divPensando.innerText = "> IA está analizando la consulta...";
     container.appendChild(divPensando);
     container.scrollTop = container.scrollHeight;
 
-    // Usamos await porque la búsqueda tarda un poquito
-    const respuesta = await inteligenciaAPS.obtenerRespuesta(texto);
+    // LLAMADA AL CEREBRO
+    const respuesta = await inteligenciaAPS.procesarPregunta(texto);
 
-    const pensando = document.getElementById('pensando');
-    if (pensando) pensando.remove();
-
+    // Quitar "Pensando" y poner respuesta final
+    document.getElementById('temp-pensando').remove();
     const divIA = document.createElement('div');
     divIA.className = 'mensaje-ia';
-    divIA.innerText = "> " + respuesta; 
+    divIA.innerText = "> " + respuesta;
     container.appendChild(divIA);
     
     container.scrollTop = container.scrollHeight;
