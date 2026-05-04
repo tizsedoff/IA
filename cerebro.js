@@ -1,81 +1,53 @@
-class RedNeuronalAPS {
-    constructor() {
-        // Conocimiento específico de tu negocio
-        this.datosPropios = {
-            "iphone": "En APS Shop tenemos los mejores iPhones de Misiones. ¿Buscás el 11, 12, 13 o 15?",
-            "precio": "Los precios de los equipos dependen del stock y el dólar. Consultanos al MD para cotizar.",
-            "envio": "Hacemos envíos a todo Misiones. Si estás en Oberá, coordinamos en el acto.",
-            "hola": "¡Hola! Soy la IA de APS. Preguntame lo que quieras, de iPhones o de cultura general.",
-            "chau": "¡Nos vemos! Gracias por contactar a APS Shop.",
-            "gracias": "¡De nada! Es un gusto ayudarte."
-        };
-    }
+// --- CEREBRO ULTRA-REACTIVO v3.0 ---
 
-    // FUNCIÓN DE PENSAMIENTO GLOBAL (Busca en la web)
-    async buscarConocimientoExterno(tema) {
-        try {
-            // Consultamos la base de datos de Wikipedia para responder "cualquier cosa"
-            const respuesta = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(tema)}`);
-            const data = await respuesta.json();
-            return data.extract || null;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    async procesarPregunta(mensaje) {
-        const m = mensaje.toLowerCase().trim();
+async buscarEnWeb(query) {
+    try {
+        // Intentamos primero con el resumen directo
+        const url = `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+        const response = await fetch(url);
+        const data = await response.json();
         
-        // 1. Check de comandos directos o palabras de APS
-        for (let clave in this.datosPropios) {
-            if (m.includes(clave)) return this.datosPropios[clave];
+        if (data.extract) {
+            return data.extract;
+        } 
+        
+        // Si no hay resumen directo (como pasó con Hilux), buscamos en los títulos
+        const searchUrl = `https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
+        const searchRes = await fetch(searchUrl);
+        const searchData = await searchRes.json();
+        
+        if (searchData.query.search.length > 0) {
+            // Traemos el fragmento del primer resultado encontrado
+            return searchData.query.search[0].snippet.replace(/<\/?[^>]+(>|$)/g, "") + "...";
         }
-
-        // 2. Si no es algo de la tienda, la IA "PIENSA" y busca afuera
-        const infoExtra = await this.buscarConocimientoExterno(m);
-        if (infoExtra) {
-            return infoExtra;
-        }
-
-        // 3. Respuesta por defecto si está muy confundida
-        return "No tengo info exacta sobre eso, pero si es un objeto o tema famoso, probá escribiendo solo el nombre (ej: 'Toyota Hilux').";
+        
+        return null;
+    } catch (error) {
+        return null;
     }
 }
 
-const inteligenciaAPS = new RedNeuronalAPS();
-
-async function ejecutarIA() {
-    const input = document.getElementById('inputPregunta');
-    const container = document.getElementById('chat-container');
-    const texto = input.value.trim();
-
-    if (texto === "") return;
-
-    // Crear globo del usuario
-    const divUser = document.createElement('div');
-    divUser.className = 'mensaje-usuario';
-    divUser.innerText = texto;
-    container.appendChild(divUser);
-
-    input.value = "";
-
-    // Globo de "Pensando..."
-    const divPensando = document.createElement('div');
-    divPensando.className = 'mensaje-ia';
-    divPensando.id = 'temp-pensando';
-    divPensando.innerText = "> IA está analizando la consulta...";
-    container.appendChild(divPensando);
-    container.scrollTop = container.scrollHeight;
-
-    // LLAMADA AL CEREBRO
-    const respuesta = await inteligenciaAPS.procesarPregunta(texto);
-
-    // Quitar "Pensando" y poner respuesta final
-    document.getElementById('temp-pensando').remove();
-    const divIA = document.createElement('div');
-    divIA.className = 'mensaje-ia';
-    divIA.innerText = "> " + respuesta;
-    container.appendChild(divIA);
+async obtenerRespuesta(pregunta) {
+    const p = pregunta.toLowerCase().trim();
     
-    container.scrollTop = container.scrollHeight;
+    // 1. REACCIONES INMEDIATAS (Saludos y Comandos cortos)
+    if (p === "hola") return "¡Hola! Soy la IA de APS Shop. Preguntame lo que quieras.";
+    if (p === "chau" || p === "adios") return "¡Chau! Gracias por pasar por APS Shop.";
+    if (p === "ayuda") return "Podés preguntarme sobre iPhones, precios o cualquier tema general (ej: 'Misiones' o 'Hilux').";
+
+    // 2. LÓGICA DE NEGOCIO (APS SHOP)
+    if (p.includes("iphone") || p.includes("11") || p.includes("12") || p.includes("13") || p.includes("15")) {
+        return "En APS Shop tenemos stock de varios modelos. El 15 es el más nuevo, pero el 13 es el que más sale. ¿Querés precios?";
+    }
+    if (p.includes("precio") || p.includes("costo")) {
+        return "Los precios cambian por el stock. Escribinos al MD de Instagram para la cotización de hoy.";
+    }
+
+    // 3. PENSAMIENTO UNIVERSAL (Cualquier otra cosa)
+    const infoGlobal = await this.buscarEnWeb(pregunta);
+    if (infoGlobal) {
+        return infoGlobal;
+    }
+
+    return "No tengo info exacta, pero seguro en Google la encontrás rápido.";
 }
