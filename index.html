@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APS AI Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="terminal">
+        <div class="header">
+            <h1>APS NEURAL v2.0</h1>
+            <span class="status">● ONLINE</span>
+        </div>
+        
+        <div id="chat-container">
+            <div class="mensaje-ia">> Sistema inicializado. ¿Qué iPhone estás buscando hoy?</div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="inputPregunta" placeholder="Escribí aquí..." onkeypress="if(event.key === 'Enter') ejecutarIA()">
+            <button onclick="ejecutarIA()">ENVIAR</button>
+        </div>
+    </div>
+
+    <script src="cerebro.js"></script>
+</body>
+</html>
